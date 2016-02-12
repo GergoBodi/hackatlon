@@ -27,6 +27,10 @@ public class MarioGame {
      * Indicates Mario's state. (small, big, star, etc.)
      */
     private MARIO_FORMS currentForm;
+    /**
+     * If Mario is in Star form, this variable contains the form changes.
+     */
+    private MARIO_FORMS tempForm;
 
     /**
      * Constructor.
@@ -35,12 +39,14 @@ public class MarioGame {
      * @param currentPoints
      * @param starPlace
      * @param currentForm
+     * @param tempForm
      */
-    public MarioGame(int lives, int currentPoints, int starPlace, MARIO_FORMS currentForm) {
+    public MarioGame(int lives, int currentPoints, int starPlace, MARIO_FORMS currentForm, MARIO_FORMS tempForm) {
         this.currentLives = lives;
         this.currentPoints = currentPoints;
         this.starPlace = starPlace;
         this.currentForm = currentForm;
+        this.tempForm = tempForm;
     }
 
     public void runGame(final List<String> storyboard) {
@@ -48,7 +54,11 @@ public class MarioGame {
         for (int i = 0; i < storyboard.size(); i++) {
             // If the star expired then the form has to be set to SMALL.
             if (i == getStarPlace()) {
-                setCurrentForm(MARIO_FORMS.SMALL);
+                if (getTempForm() == MARIO_FORMS.SMALL) {
+                    setCurrentForm(MARIO_FORMS.SMALL);
+                } else {
+                    setCurrentForm(getTempForm());
+                }
             }
 
             handleStoryboardElement(storyboard.get(i), i);
@@ -72,13 +82,13 @@ public class MarioGame {
         if (storyboardElement.matches("[0-9]+")) {
             setCurrentPoints(currentPoints + Integer.parseInt(storyboardElement));
             if (getCurrentPoints() >= 100) {
-                setCurrentLives(currentLives + 1);
-                setCurrentPoints(currentPoints - 100);
+                setCurrentLives(getCurrentLives() + (getCurrentPoints() / 100));
+                setCurrentPoints(currentPoints % 100);
             }
         } else {
             switch (storyboardElement) {
                 case MarioConstants.MUSHROOM:
-                    setCurrentForm(MARIO_FORMS.BIG);
+                    ifMarioInStarForm(MARIO_FORMS.BIG);
                     break;
                 case MarioConstants.UP1:
                     setCurrentLives(currentLives + 1);
@@ -88,17 +98,11 @@ public class MarioGame {
                     setStarPlace(index + 3);
                     break;
                 case MarioConstants.PRINCESS:
-                    winnerState();
-                    break;
                 case MarioConstants.BOWSER:
                     winnerState();
                     break;
                 case MarioConstants.GOOMBA:
-                    enemyAttacks();
-                    break;
                 case MarioConstants.KOOPA:
-                    enemyAttacks();
-                    break;
                 case MarioConstants.PIRANHA:
                     enemyAttacks();
                     break;
@@ -113,9 +117,8 @@ public class MarioGame {
      * When input is an enemy then Mario loses a life according to his form. If he has not got more lives the game over.
      */
     private void enemyAttacks() {
-        if (getCurrentForm().equals(MARIO_FORMS.STAR)) {
-            System.exit(0);
-        } else if (getCurrentForm().equals(MARIO_FORMS.BIG)) {
+        if (getCurrentForm() == MARIO_FORMS.STAR) {
+        } else if (getCurrentForm() == MARIO_FORMS.BIG) {
             setCurrentForm(MARIO_FORMS.SMALL);
         } else {
             setCurrentLives(currentLives - 1);
@@ -129,9 +132,20 @@ public class MarioGame {
     /**
      * When the input is Princess or Bowser and Mario has got more than zero lives, Mario wins.
      */
-    private void winnerState(){
+    private void winnerState() {
         System.out.println(MarioConstants.GAME_OVER_WIN);
         System.exit(0);
+    }
+
+    /**
+     * If Mario is in Star Form and a new form comes the temporary form will set that form.
+     */
+    private void ifMarioInStarForm(MARIO_FORMS comingForm) {
+        if (getCurrentForm() == MARIO_FORMS.STAR) {
+            setTempForm(comingForm);
+        } else {
+            setCurrentForm(MARIO_FORMS.BIG);
+        }
     }
 
     public int getCurrentLives() {
@@ -164,6 +178,14 @@ public class MarioGame {
 
     public void setCurrentForm(MARIO_FORMS currentForm) {
         this.currentForm = currentForm;
+    }
+
+    public MARIO_FORMS getTempForm() {
+        return tempForm;
+    }
+
+    public void setTempForm(MARIO_FORMS tempForm) {
+        this.tempForm = tempForm;
     }
 
 }
